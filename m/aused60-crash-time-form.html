@@ -1,0 +1,422 @@
+<div id=D__ID>
+	<!--third html start -->
+		<div class="container mt-95 mb-3">
+		  	<div class="row" >
+			<!-- form container start -->
+				<div class="col-12 col-lg-12 col-md-12 col-sm-12 mx-auto formbox">
+			  		<div class="row">
+						<div class="col-12">
+				  		<!-- form start -->
+				  		<form id="F__ID">
+							<h3 id=title__ID ></h3>
+							<input id="save__ID" class="btn btn-primary btn-lg" value="Save">
+							<hr>
+							<div class="form-group">
+								<fieldset class="subquestions">
+								  <label><span class="">ID (for your indentification in the csv file)</span>
+									<input type=text id="id__ID" class=form-control />
+								  </label><br>
+								  <label><span class="">Output File Name (Can be modified)</span>
+									<input type=text id="output_file_name__ID" class=form-control  />
+								  </label>
+								</fieldset>
+							  </div>
+							<hr>
+							<div class="row px-4">
+								<div class='col'>
+								   <span>File</span>
+								   <div class="form-control">
+									   <u style='cursor:pointer' ></u>
+									   <br>
+									   <input type="file" name=File_Name style="margin-top:6px" />
+								   </div>
+								</div>
+							</div>
+							<hr>
+							<div id=dynamic_part__ID></div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script>
+		//---------------------------------------------
+		function F__ID(){
+			//-------------------------------------
+			VmInclude:'__CURRENT_PATH__/form.01.no_fileupload.js'
+			/*Vm Include:__CURRENT_PATH__/shared-form.js*/
+			//-------------------------------------
+			var extime=1;
+            var extruck=0;
+            var nopart=12;
+			var drive_lenght=60;
+			var version="JS 1.01"
+			// Analysing standard partition lenght. If drive short the analysis only calculate full partitions and leave others empty. 
+			//-------------------------------------
+			var load2=m.load;
+			m.load=function(){
+				load2();
+				$('#output_file_name__ID').val('Aused crash')
+				$('#title__ID').html($vm.module_list[$vm.vm['__ID'].name].task_name+"&nbsp;&nbsp;<span style='font-size:0.7rem'>Version "+version+"</span>");
+				var fields="File_Name";
+                var dyn_fields="";    
+                var count=nopart;
+                dyn_fields+="Number_Crashes,Crashes_Off_Road,Crashes_Off_Road_Timing,Crashes_Standing_Still,Crashes_Standing_Still_Timing,Crashes_Into_Truck,Crashes_Into_Truck_Timing"
+                dyn_fields+=""
+                $vm.dyn_fields=dyn_fields;
+				var fs=$vm.dyn_fields.split(',');
+				console.log(fs)
+				var txt="";
+				var ic=0;
+				for(ic=0;ic<fs.length;ic++){
+					if(ic%4==0){
+						txt+='<div class="row px-4">\r\n';
+						//txt+='<div class="questiongroup ">\r\n';
+						//txt+='<fieldset class="subquestions">\r\n';
+					}
+					txt+='<div class="col-sm-12 col-lg-12"><label style="width:100%"> <span>'+fs[ic].replace(/_/g,' ')+'</span>\r\n';
+					txt+='<input class="form-control" type="text" name="'+fs[ic]+'" >\r\n';
+					txt+='</label></div>\r\n';
+					if(ic%4==3){
+						txt+='</div>\r\n';
+					}
+				}
+				if(ic%4!=3){
+					txt+='</div>\r\n';
+				}
+				$('#dynamic_part__ID').html(txt);
+//				if(m.input.record!=undefined){
+//					$('#record__ID').val(m.input.record.UID)
+//				}
+				if(m.input.readonly!=undefined) $('#submit__ID').hide();
+				//render_file_field_v2(m.input.record,'__ID',$('#File_Name__ID'));
+				//m.set_file_link("File_Name");
+			}
+			//-------------------------------------
+			$('#F__ID input[name=File_Name]').on('change',function(evt){
+				if(this.files.length==1){
+					file_process(this.files[0])
+				}
+			})
+			//-------------------------------------
+			$('#save__ID').on('click',function(){
+				//console.log(aused_output);
+				aused_output="["+aused_output+"]";
+				var output=JSON.parse(aused_output)
+				if($('#id__ID').val()!=undefined && $('#id__ID').val()!="") output[0].ID=$('#id__ID').val();
+				var output_name="Aused_crash.csv"
+				if($('#output_file_name__ID').val()!="") output_name=$('#output_file_name__ID').val()+".csv"
+				$vm.download_csv(output_name,output);
+            	//close_model__ID();
+			})
+			//-------------------------------------
+			m.before_submit=function(data,index){
+			}
+			//-------------------------------------
+			var file_process=function(file){
+				/*var stateNames = {};
+				stateNames[FileReader.EMPTY]   = 'EMPTY';
+				stateNames[FileReader.LOADING] = 'LOADING';
+				stateNames[FileReader.DONE]    = 'DONE';
+				*/
+				var openFile = function(event) {
+					//var input = event.target;
+					var reader = new FileReader();
+					reader.onload = function(){
+						//console.log('After load: ' + stateNames[reader.readyState]);
+					};
+					//console.log('Before read: ' + stateNames[reader.readyState]);
+					reader.readAsArrayBuffer(file);
+					//console.log('After read: ' + stateNames[reader.readyState]);
+					reader.onloadend = function() {
+						var array=reader.result;
+						var arrlength=array.byteLength;
+						var modbuf= new ArrayBuffer(arrlength);
+						var hd= new DataView(array,0,arrlength);
+						var dh= new DataView(modbuf,0,arrlength);
+						var startData=0;
+						var startSide=0;
+						var startObsacle=0;
+						for (var i=0;i<5000;i++){
+							//console.log(String.fromCharCode(hd.getInt8(i))+' '+String.fromCharCode(hd.getInt8(i+1))+' '+String.fromCharCode(hd.getInt8(i+2)));
+							if(String.fromCharCode(hd.getInt8(i))=='[' && String.fromCharCode(hd.getInt8(i+1))=='S' && String.fromCharCode(hd.getInt8(i+2))=='i') {startSide=i+16;}
+							if(String.fromCharCode(hd.getInt8(i))=='[' && String.fromCharCode(hd.getInt8(i+1))=='O' && String.fromCharCode(hd.getInt8(i+2))=='b') {startObsacle=i+12;}
+							if(String.fromCharCode(hd.getInt8(i))=='[' && String.fromCharCode(hd.getInt8(i+1))=='D' && String.fromCharCode(hd.getInt8(i+2))=='a') {startData=i+8;break;}
+						}
+						var obstacle=[];
+						var j=0;
+						var obs="";
+						while (String.fromCharCode(hd.getInt8(startObsacle+j))!='['){
+							if(String.fromCharCode(hd.getInt8(startObsacle+j))==',') {
+								while (String.fromCharCode(hd.getInt8(startObsacle+j))!='\r'){
+									j++
+									obs+=String.fromCharCode(hd.getInt8(startObsacle+j));
+								}
+								obstacle.push(obs);
+								obs="";
+							}
+							j++;
+						}
+						//console.log(obstacle)
+						var side=180.0;
+						if(String.fromCharCode(hd.getInt8(startSide))=='L') side=-180.0;
+						var timestamps=parseInt((arrlength-startData)/38);
+						var timingArr=[];
+						var positionArr=[];
+						var speedArr=[];
+						var roadArr=[];
+						var wheelArr=[];
+						var pedalArr=[];
+						var flagArr=[];
+						var starttime=hd.getUint8(startData)+hd.getUint8(startData+1)*256+hd.getUint8(startData+2)*256*256+hd.getUint8(startData+3)*256*256*256;
+						for(var i=0;i<timestamps;i++){
+							//time
+							dh.setUint8(startData+i*38,hd.getUint8(startData+i*38+3))
+							dh.setUint8(startData+i*38+1,hd.getUint8(startData+i*38+2))
+							dh.setUint8(startData+i*38+2,hd.getUint8(startData+i*38+1))
+							dh.setUint8(startData+i*38+3,hd.getUint8(startData+i*38))
+							//speed
+							dh.setUint8(startData+i*38+4,hd.getUint8(startData+i*38+11))
+							dh.setUint8(startData+i*38+5,hd.getUint8(startData+i*38+10))
+							dh.setUint8(startData+i*38+6,hd.getUint8(startData+i*38+9))
+							dh.setUint8(startData+i*38+7,hd.getUint8(startData+i*38+8))
+							dh.setUint8(startData+i*38+8,hd.getUint8(startData+i*38+7))
+							dh.setUint8(startData+i*38+9,hd.getUint8(startData+i*38+6))
+							dh.setUint8(startData+i*38+10,hd.getUint8(startData+i*38+5))
+							dh.setUint8(startData+i*38+11,hd.getUint8(startData+i*38+4))
+							//position
+							dh.setUint8(startData+i*38+12,hd.getUint8(startData+i*38+19))
+							dh.setUint8(startData+i*38+13,hd.getUint8(startData+i*38+18))
+							dh.setUint8(startData+i*38+14,hd.getUint8(startData+i*38+17))
+							dh.setUint8(startData+i*38+15,hd.getUint8(startData+i*38+16))
+							dh.setUint8(startData+i*38+16,hd.getUint8(startData+i*38+15))
+							dh.setUint8(startData+i*38+17,hd.getUint8(startData+i*38+14))
+							dh.setUint8(startData+i*38+18,hd.getUint8(startData+i*38+13))
+							dh.setUint8(startData+i*38+19,hd.getUint8(startData+i*38+12))
+							//road
+							dh.setUint8(startData+i*38+20,hd.getUint8(startData+i*38+20))
+							//wheel
+							dh.setUint8(startData+i*38+21,hd.getUint8(startData+i*38+28))
+							dh.setUint8(startData+i*38+22,hd.getUint8(startData+i*38+27))
+							dh.setUint8(startData+i*38+23,hd.getUint8(startData+i*38+26))
+							dh.setUint8(startData+i*38+24,hd.getUint8(startData+i*38+25))
+							dh.setUint8(startData+i*38+25,hd.getUint8(startData+i*38+24))
+							dh.setUint8(startData+i*38+26,hd.getUint8(startData+i*38+23))
+							dh.setUint8(startData+i*38+27,hd.getUint8(startData+i*38+22))
+							dh.setUint8(startData+i*38+28,hd.getUint8(startData+i*38+21))
+							//pedals
+							dh.setUint8(startData+i*38+29,hd.getUint8(startData+i*38+36))
+							dh.setUint8(startData+i*38+30,hd.getUint8(startData+i*38+35))
+							dh.setUint8(startData+i*38+31,hd.getUint8(startData+i*38+34))
+							dh.setUint8(startData+i*38+32,hd.getUint8(startData+i*38+33))
+							dh.setUint8(startData+i*38+33,hd.getUint8(startData+i*38+32))
+							dh.setUint8(startData+i*38+34,hd.getUint8(startData+i*38+31))
+							dh.setUint8(startData+i*38+35,hd.getUint8(startData+i*38+30))
+							dh.setUint8(startData+i*38+36,hd.getUint8(startData+i*38+29))
+							//flag
+							dh.setUint8(startData+i*38+37,hd.getUint8(startData+i*38+37))
+							//
+							timingArr.push(dh.getInt32(startData+38*i)-starttime);
+							speedArr.push(dh.getFloat64(startData+4+38*i));
+							positionArr.push(dh.getFloat64(startData+12+38*i)*100+side);
+							roadArr.push(dh.getUint8(startData+20+38*i));
+							wheelArr.push(dh.getFloat64(startData+21+38*i));
+							pedalArr.push(dh.getFloat64(startData+29+38*i));
+							flagArr.push(dh.getUint8(startData+37+38*i));
+						}
+						var input_parameters = [parseInt(extime), parseInt(nopart),timestamps];
+						var partitions=get_partitions(input_parameters)
+						var startpos=0;
+						////console.log(partitions)
+						var number_crashes=get_crashes(flagArr,timingArr);
+						var crashes_off_road=get_off_road(number_crashes,positionArr,side,timingArr);
+                        var crashes_off_road_timing="";
+                        for(var kk=0;kk<crashes_off_road.length;kk++){
+                            if(kk==crashes_off_road.length-1) crashes_off_road_timing+=(crashes_off_road[kk]/1000).toFixed(2);
+                            else crashes_off_road_timing+=(crashes_off_road[kk]/1000).toFixed(2)+" ";
+                        }
+						var crashes_standing_still=get_standing_still(number_crashes,speedArr,timingArr);
+                        var crashes_standing_still_timing="";
+                        for(var kk=0;kk<crashes_standing_still.length;kk++){
+                            if(kk==crashes_standing_still.length-1) crashes_standing_still_timing+=(crashes_standing_still[kk]/1000).toFixed(2);
+                            else crashes_standing_still_timing+=(crashes_standing_still[kk]/1000).toFixed(2)+" ";
+                        }
+						var crashes_into_truck=get_crashes_into_truck(number_crashes,flagArr,timingArr);
+                        var crashes_into_truck_timing="";
+                        for(var kk=0;kk<crashes_into_truck.length;kk++){
+                            if(kk==crashes_into_truck.length-1) crashes_into_truck_timing+=(crashes_into_truck[kk]/1000).toFixed(2);
+                            else crashes_into_truck_timing+=(crashes_into_truck[kk]/1000).toFixed(2)+" ";
+                        }
+						console.log("Number_Crashes = "+number_crashes.length);
+						console.log("Crashes_index = "+number_crashes);
+						console.log("Crashes_Off_Road =" +crashes_off_road);
+						console.log("Crashes_Standing_Still = "+crashes_standing_still);
+						var aused_name=[];
+						var aused_result=[];
+						aused_name.push('Number_Crashes')
+						aused_result.push(number_crashes.length)
+						aused_name.push('Crashes_Off_Road')
+						aused_result.push(crashes_off_road.length)
+						aused_name.push('Crashes_Off_Road_Timing')
+						aused_result.push(crashes_off_road_timing)
+						aused_name.push('Crashes_Standing_Still')
+						aused_result.push(crashes_standing_still.length)
+						aused_name.push('Crashes_Standing_Still_Timing')
+						aused_result.push(crashes_standing_still_timing)
+						aused_name.push('Crashes_Into_Truck')
+						aused_result.push(crashes_into_truck.length)
+						aused_name.push('Crashes_Into_Truck_Timing')
+						aused_result.push(crashes_into_truck_timing)
+						var fd=$vm.dyn_fields.split(',');
+						for(var j=0;j< fd.length;j++){
+		                    $('#F__ID input[name="' + fd[j] + '"]').val('');
+        		        }
+						for (var v = 0; v < aused_name.length; v++) {
+							$('#F__ID input[name="' + aused_name[v] + '"]').val(aused_result[v]);
+							if( v==0) aused_output="{"+'"'+aused_name[v]+'"'+":"+'"'+aused_result[v]+'"';
+							else if (v==aused_name.length-1) aused_output=aused_output+',"'+aused_name[v]+'"'+":"+'"'+aused_result[v]+'"}'
+							else aused_output=aused_output+',"'+aused_name[v]+'"'+":"+'"'+aused_result[v]+'"'
+						}
+						$('#F__ID input[name="Version_No"]').val(version);
+					}
+				};
+				openFile();
+			}
+			//-------------------------------------
+			var get_crashes = function(flagArr,timingArr){
+				var crashes=[];
+				var idx=0;
+				while(idx!=-1){
+					idx=flagArr.indexOf(2,idx)
+					if(idx==-1) break;
+					crashes.push(idx)
+                    console.log((timingArr[idx]/1000).toFixed(3))
+                    //console.log(timingArr[0]+'-'+timingArr[1]+'-'+timingArr[10]+'-'+timingArr[20]+'-'+timingArr[timingArr.length-1])
+					idx=flagArr.indexOf(0,idx)
+				}
+				return crashes;                            
+			}
+			//-------------------------------------
+			var get_off_road = function(crashes,positionArr,side,timingArr){
+				var off_road=[];
+				var left=720+side;
+				var right=-720+side;
+				for (var i=0;i<crashes.length;i++){
+					//console.log(positionArr[crashes[i]],left,right)
+					if(positionArr[crashes[i]] >left || positionArr[crashes[i]] < right ) off_road.push(timingArr[crashes[i]])
+				}
+				return off_road;                            
+			}
+			//-------------------------------------
+			var get_standing_still = function(crashes,speedArr,timingArr){
+				var standing_still=[];
+				for (var i=0;i<crashes.length;i++){
+					if(speedArr[crashes[i]] == 0 ) standing_still.push(timingArr[crashes[i]])
+				}
+				return standing_still;                            
+			}
+			//-------------------------------------
+			var get_crashes_into_truck = function(crashes,flagArr,timingArr){
+				var crashes_into_truck=[];
+				for (var i=0;i<crashes.length;i++){
+                    //console.log(i+'='+flagArr[crashes[i]-1]+'='+timingArr[crashes[i]])
+					if(flagArr[crashes[i]-1] == 1 ) crashes_into_truck.push(timingArr[crashes[i]]);
+				}
+				return crashes_into_truck;                            
+			}
+			//-------------------------------------
+			var get_reaction_time = function(obstacle,pedalArr,flagArr){
+				reaction=[];
+				for(var i=0;i<obstacle.length;i++){
+					var location=parseInt(obstacle[i])*50;
+					var j=1;
+					if(flagArr[location+j]=='1'){
+						while(j<500){ //max 10 seconds
+							if(pedalArr[location+j] < -0.11){
+								break;
+							}
+							j++;
+						}
+					}
+					reaction.push(j*20/1000);
+				}
+				return reaction;                            
+			}
+			//-------------------------------------
+			var get_partitions = function(input_parameters){
+				var exludesamples = input_parameters[0]*50*60;
+				var normal_timepointsperpartitions=(50*60*drive_lenght-exludesamples)/input_parameters[1];
+				var number_of_real_partitions=parseInt((input_parameters[2]-exludesamples)/normal_timepointsperpartitions);
+				var timepointsignore=0
+				var timepointsperpartitions=(50*60*drive_lenght-exludesamples-timepointsignore)/input_parameters[1];
+				if(number_of_real_partitions==input_parameters[1]){
+					timepointsignore=parseInt(input_parameters[2]-exludesamples)%parseInt(input_parameters[1]);
+					timepointsperpartitions=(input_parameters[2]-exludesamples-timepointsignore)/input_parameters[1];
+				}
+				var partitions =[];
+				for (var i=1;i<number_of_real_partitions+1;i++){
+					partitions.push([exludesamples+timepointsignore+(i-1)*timepointsperpartitions,exludesamples+timepointsignore+timepointsperpartitions*i-1]);
+				}
+				return partitions;                            
+			}
+			//-------------------------------------
+			var get_clean_speed = function(speed){
+				var clean_speed = [];
+				for (var i=0;i<speed.length-1;i++){
+					if(speed[i]<0.0001) {clean_speed.push(0.0);}
+					else if(speed[i] <= 80 && speed[i]>=60) clean_speed.push(0.0);
+					else if(speed[i]>80) {clean_speed.push(speed[i]-80.0);}
+					else if(speed[i]<60) {clean_speed.push(60.0-speed[i]);}
+				}
+				return clean_speed;
+			}
+			//-------------------------------------
+			function median(values){
+				if(values.length ===0) return 0;
+				values.sort(function(a,b){
+					return a-b;
+				});
+				var half = Math.floor(values.length / 2);
+				if (values.length % 2)
+					return values[half];
+				return (values[half - 1] + values[half]) / 2.0;
+			}            
+			//-------------------------------------
+			function standardDeviation(values){
+				var avg = average(values);              
+				var squareDiffs = values.map(function(value){
+					var diff = value - avg;
+					var sqrDiff = diff * diff;
+					return sqrDiff;
+				});
+				var avgSquareDiff = average(squareDiffs)*values.length/(values.length-1);
+				var stdDev = Math.sqrt(avgSquareDiff);
+				return stdDev;
+			}
+			//-------------------------------------
+			function average(data){
+				var sum = data.reduce(function(sum, value){
+					return sum + Math.abs(value);
+				}, 0);
+				var avg = sum / data.length;
+				return avg;
+			}
+			//-------------------------------------
+			function average_median(data,median){
+				var sum = data.reduce(function(sum, value){
+					return sum + Math.abs(value-median);
+				}, 0);
+				var avg = sum / data.length;
+				return avg;
+			}
+		}
+	</script>
+	<style>
+		#D__ID .mt-95 {
+			max-width:800px;
+		}
+		VmInclude:__CURRENT_PATH__/wappsystem-form.css
+	</style>
+</div>
+		
